@@ -1,0 +1,17 @@
+package net.minecraft.commands;
+
+import net.minecraft.network.chat.Component;
+
+public class FunctionInstantiationException extends Exception {
+
+    private final Component messageComponent;
+
+    public FunctionInstantiationException(Component messageComponent) {
+        super(messageComponent.getString());
+        this.messageComponent = messageComponent;
+    }
+
+    public Component messageComponent() {
+        return this.messageComponent;
+    }
+}

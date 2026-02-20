@@ -1,0 +1,24 @@
+package net.minecraft.network.protocol.login;
+
+import net.minecraft.network.ConnectionProtocol;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.ProtocolInfo;
+import net.minecraft.network.protocol.ProtocolInfoBuilder;
+import net.minecraft.network.protocol.SimpleUnboundProtocol;
+import net.minecraft.network.protocol.cookie.ClientboundCookieRequestPacket;
+import net.minecraft.network.protocol.cookie.CookiePacketTypes;
+import net.minecraft.network.protocol.cookie.ServerboundCookieResponsePacket;
+
+public class LoginProtocols {
+
+    public static final SimpleUnboundProtocol<ServerLoginPacketListener, FriendlyByteBuf> SERVERBOUND_TEMPLATE = ProtocolInfoBuilder.<ServerLoginPacketListener, FriendlyByteBuf>serverboundProtocol(ConnectionProtocol.LOGIN, (protocolinfobuilder) -> {
+        protocolinfobuilder.addPacket(LoginPacketTypes.SERVERBOUND_HELLO, ServerboundHelloPacket.STREAM_CODEC).addPacket(LoginPacketTypes.SERVERBOUND_KEY, ServerboundKeyPacket.STREAM_CODEC).addPacket(LoginPacketTypes.SERVERBOUND_CUSTOM_QUERY_ANSWER, ServerboundCustomQueryAnswerPacket.STREAM_CODEC).addPacket(LoginPacketTypes.SERVERBOUND_LOGIN_ACKNOWLEDGED, ServerboundLoginAcknowledgedPacket.STREAM_CODEC).addPacket(CookiePacketTypes.SERVERBOUND_COOKIE_RESPONSE, ServerboundCookieResponsePacket.STREAM_CODEC);
+    });
+    public static final ProtocolInfo<ServerLoginPacketListener> SERVERBOUND = LoginProtocols.SERVERBOUND_TEMPLATE.bind(FriendlyByteBuf::new);
+    public static final SimpleUnboundProtocol<ClientLoginPacketListener, FriendlyByteBuf> CLIENTBOUND_TEMPLATE = ProtocolInfoBuilder.<ClientLoginPacketListener, FriendlyByteBuf>clientboundProtocol(ConnectionProtocol.LOGIN, (protocolinfobuilder) -> {
+        protocolinfobuilder.addPacket(LoginPacketTypes.CLIENTBOUND_LOGIN_DISCONNECT, ClientboundLoginDisconnectPacket.STREAM_CODEC).addPacket(LoginPacketTypes.CLIENTBOUND_HELLO, ClientboundHelloPacket.STREAM_CODEC).addPacket(LoginPacketTypes.CLIENTBOUND_LOGIN_FINISHED, ClientboundLoginFinishedPacket.STREAM_CODEC).addPacket(LoginPacketTypes.CLIENTBOUND_LOGIN_COMPRESSION, ClientboundLoginCompressionPacket.STREAM_CODEC).addPacket(LoginPacketTypes.CLIENTBOUND_CUSTOM_QUERY, ClientboundCustomQueryPacket.STREAM_CODEC).addPacket(CookiePacketTypes.CLIENTBOUND_COOKIE_REQUEST, ClientboundCookieRequestPacket.STREAM_CODEC);
+    });
+    public static final ProtocolInfo<ClientLoginPacketListener> CLIENTBOUND = LoginProtocols.CLIENTBOUND_TEMPLATE.bind(FriendlyByteBuf::new);
+
+    public LoginProtocols() {}
+}

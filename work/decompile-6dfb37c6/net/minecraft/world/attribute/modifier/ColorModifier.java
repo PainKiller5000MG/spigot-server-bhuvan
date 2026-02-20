@@ -1,0 +1,89 @@
+package net.minecraft.world.attribute.modifier;
+
+import com.mojang.datafixers.util.Either;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.util.ARGB;
+import net.minecraft.util.ExtraCodecs;
+import net.minecraft.util.Mth;
+import net.minecraft.world.attribute.EnvironmentAttribute;
+import net.minecraft.world.attribute.LerpFunction;
+
+public interface ColorModifier<Argument> extends AttributeModifier<Integer, Argument> {
+
+    ColorModifier<Integer> ALPHA_BLEND = new ColorModifier<Integer>() {
+        public Integer apply(Integer subject, Integer argument) {
+            return ARGB.alphaBlend(subject, argument);
+        }
+
+        @Override
+        public Codec<Integer> argumentCodec(EnvironmentAttribute<Integer> type) {
+            return ExtraCodecs.STRING_ARGB_COLOR;
+        }
+
+        @Override
+        public LerpFunction<Integer> argumentKeyframeLerp(EnvironmentAttribute<Integer> type) {
+            return LerpFunction.ofColor();
+        }
+    };
+    ColorModifier<Integer> ADD = ARGB::addRgb;
+    ColorModifier<Integer> SUBTRACT = ARGB::subtractRgb;
+    ColorModifier<Integer> MULTIPLY_RGB = ARGB::multiply;
+    ColorModifier<Integer> MULTIPLY_ARGB = ARGB::multiply;
+    ColorModifier<ColorModifier.BlendToGray> BLEND_TO_GRAY = new ColorModifier<ColorModifier.BlendToGray>() {
+        public Integer apply(Integer subject, ColorModifier.BlendToGray argument) {
+            int i = ARGB.scaleRGB(ARGB.greyscale(subject), argument.brightness);
+
+            return ARGB.srgbLerp(argument.factor, subject, i);
+        }
+
+        @Override
+        public Codec<ColorModifier.BlendToGray> argumentCodec(EnvironmentAttribute<Integer> type) {
+            return ColorModifier.BlendToGray.CODEC;
+        }
+
+        @Override
+        public LerpFunction<ColorModifier.BlendToGray> argumentKeyframeLerp(EnvironmentAttribute<Integer> type) {
+            return (f, colormodifier_blendtogray, colormodifier_blendtogray1) -> {
+                return new ColorModifier.BlendToGray(Mth.lerp(f, colormodifier_blendtogray.brightness, colormodifier_blendtogray1.brightness), Mth.lerp(f, colormodifier_blendtogray.factor, colormodifier_blendtogray1.factor));
+            };
+        }
+    };
+
+    @FunctionalInterface
+    public interface RgbModifier extends ColorModifier<Integer> {
+
+        @Override
+        default Codec<Integer> argumentCodec(EnvironmentAttribute<Integer> type) {
+            return ExtraCodecs.STRING_RGB_COLOR;
+        }
+
+        @Override
+        default LerpFunction<Integer> argumentKeyframeLerp(EnvironmentAttribute<Integer> type) {
+            return LerpFunction.ofColor();
+        }
+    }
+
+    @FunctionalInterface
+    public interface ArgbModifier extends ColorModifier<Integer> {
+
+        @Override
+        default Codec<Integer> argumentCodec(EnvironmentAttribute<Integer> type) {
+            return Codec.either(ExtraCodecs.STRING_ARGB_COLOR, ExtraCodecs.RGB_COLOR_CODEC).xmap(Either::unwrap, (integer) -> {
+                return ARGB.alpha(integer) == 255 ? Either.right(integer) : Either.left(integer);
+            });
+        }
+
+        @Override
+        default LerpFunction<Integer> argumentKeyframeLerp(EnvironmentAttribute<Integer> type) {
+            return LerpFunction.ofColor();
+        }
+    }
+
+    public static record BlendToGray(float brightness, float factor) {
+
+        public static final Codec<ColorModifier.BlendToGray> CODEC = RecordCodecBuilder.create((instance) -> {
+            return instance.group(Codec.floatRange(0.0F, 1.0F).fieldOf("brightness").forGetter(ColorModifier.BlendToGray::brightness), Codec.floatRange(0.0F, 1.0F).fieldOf("factor").forGetter(ColorModifier.BlendToGray::factor)).apply(instance, ColorModifier.BlendToGray::new);
+        });
+    }
+}

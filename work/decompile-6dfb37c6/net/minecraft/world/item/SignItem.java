@@ -1,0 +1,45 @@
+package net.minecraft.world.item;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SignBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import org.jspecify.annotations.Nullable;
+
+public class SignItem extends StandingAndWallBlockItem {
+
+    public SignItem(Block sign, Block wallSign, Item.Properties properties) {
+        super(sign, wallSign, Direction.DOWN, properties);
+    }
+
+    public SignItem(Item.Properties properties, Block sign, Block wallSign, Direction direction) {
+        super(sign, wallSign, direction, properties);
+    }
+
+    @Override
+    protected boolean updateCustomBlockEntityTag(BlockPos pos, Level level, @Nullable Player player, ItemStack itemStack, BlockState placedState) {
+        boolean flag = super.updateCustomBlockEntityTag(pos, level, player, itemStack, placedState);
+
+        if (!level.isClientSide() && !flag && player != null) {
+            BlockEntity blockentity = level.getBlockEntity(pos);
+
+            if (blockentity instanceof SignBlockEntity) {
+                SignBlockEntity signblockentity = (SignBlockEntity) blockentity;
+                Block block = level.getBlockState(pos).getBlock();
+
+                if (block instanceof SignBlock) {
+                    SignBlock signblock = (SignBlock) block;
+
+                    signblock.openTextEdit(player, signblockentity, true);
+                }
+            }
+        }
+
+        return flag;
+    }
+}

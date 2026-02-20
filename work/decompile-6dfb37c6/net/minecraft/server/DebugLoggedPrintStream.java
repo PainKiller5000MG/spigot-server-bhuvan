@@ -1,0 +1,23 @@
+package net.minecraft.server;
+
+import com.mojang.logging.LogUtils;
+import java.io.OutputStream;
+import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+
+public class DebugLoggedPrintStream extends LoggedPrintStream {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
+
+    public DebugLoggedPrintStream(String name, OutputStream out) {
+        super(name, out);
+    }
+
+    @Override
+    protected void logLine(@Nullable String out) {
+        StackTraceElement[] astacktraceelement = Thread.currentThread().getStackTrace();
+        StackTraceElement stacktraceelement = astacktraceelement[Math.min(3, astacktraceelement.length)];
+
+        DebugLoggedPrintStream.LOGGER.info("[{}]@.({}:{}): {}", new Object[]{this.name, stacktraceelement.getFileName(), stacktraceelement.getLineNumber(), out});
+    }
+}
